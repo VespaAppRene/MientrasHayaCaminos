@@ -1,220 +1,153 @@
 {
   "_version": "public-2.0",
-  "_exportDate": "2026-03-31T17:06:29.854Z",
+  "_exportDate": "2026-03-31T20:37:27.774Z",
   "tipo": "officina",
   "stats": {
     "spesaRicambiUsd": 0,
     "spesaManodoperaUsd": 0
   },
-  "manutenzioni": [
-    {
-      "id": 1774884684180,
-      "data": "30/03/2026",
-      "ora": "10:31",
-      "paese": "Colombia",
-      "km": "77.7",
-      "nome": "caaaaa",
-      "desc": "taaaaa",
-      "costoLocal": 0,
-      "valuta": "COP",
-      "costoUsd": 0,
-      "fotoUrl": null,
-      "geo": {
-        "lat": 4.8197633,
-        "lon": -74.35554
-      }
-    },
-    {
-      "id": 1774881487255,
-      "data": "30/03/2026",
-      "ora": "09:38",
-      "paese": "Colombia",
-      "km": "77.7",
-      "nome": "La crucetaaaa",
-      "desc": "se me solto la cruceta",
-      "costoLocal": 0,
-      "valuta": "COP",
-      "costoUsd": 0,
-      "fotoUrl": null,
-      "geo": {
-        "lat": 4.8197633,
-        "lon": -74.35554
-      }
-    }
-  ],
-  "carburazioni": [
-    {
-      "id": 1774910721890,
-      "data": "30/03/2026",
-      "ora": "17:45",
-      "alt": 2674,
-      "chicMax": 666,
-      "chicMin": 111,
-      "viteAria": "6",
-      "viteMinimo": "12",
-      "candela": "de merda",
-      "nota": "na merda",
-      "geo": {
-        "lat": 4.8059166,
-        "lon": -74.3606878
-      },
-      "fotoCandela": null,
-      "paese": ""
-    },
-    {
-      "id": 1774884720591,
-      "data": "30/03/2026",
-      "ora": "10:32",
-      "alt": 2674,
-      "chicMax": 110,
-      "chicMin": 75,
-      "viteAria": "1.25",
-      "viteMinimo": "1.75",
-      "candela": "",
-      "nota": "prova getti altezza",
-      "geo": {
-        "lat": 4.8197633,
-        "lon": -74.35554
-      },
-      "fotoCandela": null,
-      "paese": ""
-    }
-  ],
+  "manutenzioni": [],
+  "carburazioni": [],
   "inventario": [
     {
-      "id": "inv1",
       "nome": "Cavi Cambio",
-      "qta": 3,
+      "qta": 4,
       "wear": "interval",
       "intervalKm": 6000,
-      "usedKm": 1800,
-      "lastKm": 7262.1
+      "lastKm": 0
     },
     {
-      "id": "inv2",
       "nome": "Cavo Frizione",
-      "qta": 1,
+      "qta": 2,
       "wear": "interval",
       "intervalKm": 5000,
-      "usedKm": 900,
-      "lastKm": 8162.1
+      "lastKm": 0
     },
     {
-      "id": "inv3",
       "nome": "Cavo Freno Anteriore",
       "qta": 2,
       "wear": "interval",
       "intervalKm": 8000,
-      "usedKm": 900,
-      "lastKm": 8162.1
+      "lastKm": 0
     },
     {
-      "id": "inv4",
       "nome": "Cavo Freno Posteriore",
       "qta": 2,
       "wear": "interval",
       "intervalKm": 8000,
-      "usedKm": 900,
-      "lastKm": 8162.1
+      "lastKm": 0
     },
     {
-      "id": "inv5",
       "nome": "Cavo Acceleratore",
-      "qta": 0,
-      "wear": "interval",
-      "intervalKm": 6000,
-      "usedKm": 2300,
-      "lastKm": 6762.1
-    },
-    {
-      "id": "inv6",
-      "nome": "Ganasce freno ant.",
-      "qta": 1,
-      "wear": "interval",
-      "intervalKm": 5000,
-      "usedKm": 2800,
-      "lastKm": 6262.1
-    },
-    {
-      "id": "inv7",
-      "nome": "Ganasce freno post.",
-      "qta": 1,
-      "wear": "interval",
-      "intervalKm": 3000,
-      "usedKm": 2100,
-      "lastKm": 6962.1
-    },
-    {
-      "id": "inv8",
-      "nome": "Pneumatico",
       "qta": 2,
       "wear": "interval",
-      "intervalKm": 10000,
-      "usedKm": 6200,
-      "lastKm": 2862.1000000000004
+      "intervalKm": 6000,
+      "lastKm": 0
     },
     {
-      "id": "inv9",
+      "nome": "Ganasce freno ant.",
+      "qta": 2,
+      "wear": "interval",
+      "intervalKm": 5000,
+      "lastKm": 0
+    },
+    {
+      "nome": "Ganasce freno post.",
+      "qta": 2,
+      "wear": "interval",
+      "intervalKm": 3000,
+      "lastKm": 0
+    },
+    {
+      "nome": "Pneumatico",
+      "qta": 3,
+      "wear": "interval",
+      "intervalKm": 10000,
+      "lastKm": 0
+    },
+    {
       "nome": "Kit frizione",
       "qta": 1,
       "wear": "interval",
       "intervalKm": 12000,
-      "usedKm": 4300,
-      "lastKm": 4762.1
+      "lastKm": 0
     },
     {
-      "id": "inv10",
       "nome": "Dischi frizione",
       "qta": 1,
       "wear": "interval",
       "intervalKm": 10000,
-      "usedKm": 4300,
-      "lastKm": 4762.1
+      "lastKm": 0
     },
     {
-      "id": "inv11",
       "nome": "Cambio Olio 300ml",
-      "qta": 0,
-      "wear": "interval",
-      "intervalKm": 2000,
-      "usedKm": 1200,
-      "lastKm": 7862.1
-    },
-    {
-      "id": "inv12",
-      "nome": "Candela",
       "qta": 1,
       "wear": "interval",
-      "intervalKm": 6000,
-      "usedKm": 4500,
-      "lastKm": 4562.1
+      "intervalKm": 2000,
+      "lastKm": 0
     },
     {
-      "id": "inv13",
+      "nome": "Candela",
+      "qta": 2,
+      "wear": "interval",
+      "intervalKm": 6000,
+      "lastKm": 0
+    },
+    {
       "nome": "CDI",
       "qta": 1,
       "wear": "na",
       "intervalKm": 0,
-      "usedKm": 0,
-      "lastKm": 9062.1
+      "lastKm": 0
     },
     {
-      "id": "inv14",
       "nome": "Piatto Bobbine",
       "qta": 1,
       "wear": "na",
       "intervalKm": 0,
-      "usedKm": 0,
-      "lastKm": 9062.1
+      "lastKm": 0
     },
     {
-      "id": "inv15",
+      "nome": "Piste Direzione",
+      "qta": 1,
+      "wear": "na",
+      "intervalKm": 0,
+      "lastKm": 0
+    },
+    {
+      "nome": "Supporto Ammortizzatore Posteriore",
+      "qta": 1,
+      "wear": "na",
+      "intervalKm": 0,
+      "lastKm": 0
+    },
+    {
+      "nome": "Collettore carburatore",
+      "qta": 1,
+      "wear": "na",
+      "intervalKm": 0,
+      "lastKm": 0
+    },
+    {
+      "nome": "Eje Balancin",
+      "qta": 1,
+      "wear": "na",
+      "intervalKm": 0,
+      "lastKm": 0
+    },
+    {
       "nome": "Maniglia Freno",
       "qta": 1,
       "wear": "na",
       "intervalKm": 0,
-      "usedKm": 0,
-      "lastKm": 9062.1
+      "lastKm": 0
+    },
+    {
+      "nome": "Maniglia Frizione",
+      "qta": 1,
+      "wear": "na",
+      "intervalKm": 0,
+      "lastKm": 0
     }
   ]
 }
