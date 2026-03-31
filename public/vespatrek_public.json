@@ -1,0 +1,57 @@
+{
+  "_version": "public-1.0",
+  "_exportDate": "2026-03-24T20:59:22.492Z",
+  "titolo": "VespaTrek PX150",
+  "diarioTagsPreset": [
+    "Paesaggi",
+    "Vespistas",
+    "Moteros",
+    "Turismo",
+    "Sterrato",
+    "Paisajes",
+    "Rio",
+    "Storia",
+    "Arte",
+    "Persone",
+    "Officina",
+    "Problemi",
+    "Frontiera",
+    "Burocrazia",
+    "Polizia",
+    "Strade",
+    "Pioggia",
+    "Campeggio",
+    "Cibo",
+    "Animali"
+  ],
+  "paeseAttuale": "Colombia",
+  "stats": {
+    "kmTotali": 0,
+    "benzinaUsataLitri": 0,
+    "benzinaFuoriTappaLitri": 0,
+    "olioTotaleLitri": 0,
+    "spesaBenzinaUsd": 0,
+    "spesaOlioUsd": 20,
+    "spesaRicambiUsd": 0,
+    "spesaManodoperaUsd": 0
+  },
+  "datiPaesi": {
+    "Colombia": {
+      "km": 0,
+      "benzina": 0,
+      "spesaBenzina": 0,
+      "spesaOlio": 0,
+      "spesaBenzinaUsd": 0,
+      "spesaBenzinaLocal": 0,
+      "valuta": "COP",
+      "spesaOlioUsd": 0,
+      "olioMl": 0,
+      "benzinaFuori": 0
+    }
+  },
+  "tappe": [ ],
+  "diario": [ ],
+  "manutenzioni": [ ],
+  "rifornimenti": [ ],
+  "carburazioni": [ ]
+}
