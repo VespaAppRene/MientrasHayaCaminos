@@ -1,0 +1,2508 @@
+<!doctype html>
+<html lang="it">
+<head>
+  <meta charset="utf-8"/>
+  <meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1, user-scalable=no"/>
+  <title>VespaTrek — Live Map</title>
+
+  <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css" />
+  <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
+
+  <style>
+    :root {
+      --bg: #141414;
+      --panel: #202020;
+      --panel-2: #262626;
+      --panel-3: rgba(24,24,24,0.92);
+      --border: #343434;
+      --text: #f3f3f3;
+      --text-muted: #b8b8b8;
+      --text-soft: #8d8d8d;
+
+      --accent: #7cb342;
+      --accent-2: #d7a03d;
+      --brand: #4da3ff;
+      --danger: #e35d5d;
+
+      --yt: #e53935;
+      --fuel: #66bb6a;
+      --maint: #ab47bc;
+      --carb: #26c6da;
+      --photo: #d7a03d;
+      --note: #4fc3f7;
+
+      --shadow: 0 10px 30px rgba(0,0,0,0.35);
+    }
+
+    * { box-sizing: border-box; }
+    html, body { height: 100%; }
+
+    body {
+      margin: 0;
+      padding: 0;
+      font-family: system-ui, -apple-system, sans-serif;
+      background: var(--bg);
+      color: var(--text);
+      height: 100dvh;
+      overflow: hidden;
+      display: flex;
+      flex-direction: column;
+    }
+
+    #appShell {
+      position: relative;
+      flex: 1 1 auto;
+      min-height: 0;
+      display: flex;
+      flex-direction: column;
+    }
+
+    #topBar {
+      position: relative;
+      z-index: 1200;
+      padding: 12px 14px 10px;
+      background: linear-gradient(to bottom, rgba(20,20,20,0.96), rgba(20,20,20,0.88));
+      backdrop-filter: blur(14px);
+      border-bottom: 1px solid rgba(255,255,255,0.04);
+      flex-shrink: 0;
+    }
+
+    .topbar-main {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      gap: 12px;
+      min-width: 0;
+    }
+
+    .brand-block {
+      display: flex;
+      align-items: center;
+      gap: 12px;
+      min-width: 0;
+    }
+
+    .brand-copy {
+      min-width: 0;
+    }
+
+    .brand-title {
+      font-size: 22px;
+      line-height: 1.05;
+      font-weight: 900;
+      letter-spacing: 0.3px;
+      color: var(--text);
+      white-space: nowrap;
+      overflow: hidden;
+      text-overflow: ellipsis;
+    }
+
+    .brand-subtitle {
+      margin-top: 3px;
+      font-size: 12px;
+      color: var(--text-soft);
+      font-weight: 500;
+      white-space: nowrap;
+      overflow: hidden;
+      text-overflow: ellipsis;
+    }
+
+    .header-right {
+      display: flex;
+      align-items: center;
+      gap: 8px;
+      flex-wrap: wrap;
+      justify-content: flex-end;
+    }
+
+    .lang-switch {
+      display: inline-flex;
+      align-items: center;
+      border: 1px solid var(--border);
+      border-radius: 999px;
+      background: #1a1a1a;
+      overflow: hidden;
+      flex: 0 0 auto;
+    }
+
+    .lang-btn {
+      border: none;
+      background: transparent;
+      color: var(--text-muted);
+      font-size: 12px;
+      font-weight: 800;
+      padding: 8px 10px;
+      cursor: pointer;
+      min-width: 38px;
+    }
+
+    .lang-btn.active {
+      background: #2b2b2b;
+      color: var(--text);
+    }
+
+    .socials {
+      display: flex;
+      align-items: center;
+      gap: 8px;
+    }
+
+    .social-link {
+      width: 34px;
+      height: 34px;
+      display: inline-flex;
+      align-items: center;
+      justify-content: center;
+      border: 1px solid var(--border);
+      border-radius: 10px;
+      background: #181818;
+      color: var(--text-muted);
+      text-decoration: none;
+      flex: 0 0 auto;
+      transition: 0.18s ease;
+    }
+
+    .social-link:hover {
+      color: var(--text);
+      border-color: #4a4a4a;
+      transform: translateY(-1px);
+    }
+
+    .social-link svg {
+      width: 18px;
+      height: 18px;
+      display: block;
+    }
+
+    .btn {
+      border: none;
+      border-radius: 12px;
+      padding: 10px 14px;
+      font-size: 14px;
+      font-weight: 800;
+      cursor: pointer;
+      transition: 0.18s ease;
+      white-space: nowrap;
+    }
+
+    .btn:hover { transform: translateY(-1px); }
+    .btn:active { transform: translateY(0); }
+
+    .btn-primary {
+      background: var(--accent);
+      color: #101010;
+    }
+
+    .btn-secondary {
+      background: #2b2b2b;
+      color: var(--text);
+      border: 1px solid #3a3a3a;
+    }
+
+    .stats-pills {
+      display: flex;
+      gap: 8px;
+      margin-top: 10px;
+      flex-wrap: wrap;
+    }
+
+    .stat-pill {
+      display: inline-flex;
+      align-items: center;
+      gap: 8px;
+      background: rgba(32,32,32,0.96);
+      border: 1px solid var(--border);
+      color: var(--text);
+      border-radius: 999px;
+      padding: 8px 12px;
+      font-size: 12px;
+      box-shadow: var(--shadow);
+    }
+
+    .stat-pill .label {
+      color: var(--text-muted);
+      font-weight: 700;
+    }
+
+    .stat-pill .value {
+      color: var(--text);
+      font-weight: 900;
+    }
+
+    #mapWrap {
+      position: relative;
+      flex: 1 1 auto;
+      min-height: 0;
+    }
+
+    #mapPub {
+      width: 100%;
+      height: 100%;
+      min-height: 0;
+      z-index: 1;
+    }
+
+    .map-actions {
+      position: absolute;
+      top: 14px;
+      left: 14px;
+      z-index: 1100;
+      display: flex;
+      gap: 8px;
+      flex-wrap: wrap;
+      pointer-events: none;
+    }
+
+    .map-actions > * {
+      pointer-events: auto;
+    }
+
+    .floating-btn {
+      display: inline-flex;
+      align-items: center;
+      gap: 8px;
+      background: var(--panel-3);
+      color: var(--text);
+      border: 1px solid rgba(255,255,255,0.08);
+      border-radius: 999px;
+      padding: 10px 14px;
+      font-size: 14px;
+      font-weight: 800;
+      cursor: pointer;
+      box-shadow: var(--shadow);
+      backdrop-filter: blur(12px);
+    }
+
+    .floating-btn strong {
+      font-weight: 900;
+    }
+
+    #filtersBackdrop {
+      position: fixed;
+      inset: 0;
+      background: rgba(0,0,0,0.45);
+      z-index: 1490;
+      display: none;
+    }
+
+    #filtersBackdrop.open {
+      display: block;
+    }
+
+    #filtersDrawer {
+      position: fixed;
+      top: 0;
+      left: 0;
+      height: 100dvh;
+      width: min(380px, 92vw);
+      background: #1d1d1d;
+      border-right: 1px solid var(--border);
+      box-shadow: var(--shadow);
+      z-index: 1500;
+      transform: translateX(-100%);
+      transition: transform 0.24s ease;
+      display: flex;
+      flex-direction: column;
+    }
+
+    #filtersDrawer.open {
+      transform: translateX(0);
+    }
+
+    .drawer-head {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      gap: 10px;
+      padding: 16px 16px 10px;
+      border-bottom: 1px solid rgba(255,255,255,0.05);
+      flex-shrink: 0;
+    }
+
+    .drawer-title {
+      font-size: 20px;
+      font-weight: 900;
+      color: var(--text);
+    }
+
+    .icon-close {
+      width: 36px;
+      height: 36px;
+      border-radius: 50%;
+      border: none;
+      background: #343434;
+      color: #fff;
+      font-size: 20px;
+      font-weight: 900;
+      cursor: pointer;
+      flex: 0 0 auto;
+    }
+
+    .drawer-body {
+      flex: 1 1 auto;
+      overflow-y: auto;
+      padding: 16px;
+    }
+
+    .field-group + .field-group {
+      margin-top: 18px;
+    }
+
+    .field-label {
+      display: block;
+      margin-bottom: 10px;
+      color: var(--text-muted);
+      font-size: 12px;
+      font-weight: 800;
+      letter-spacing: 0.4px;
+      text-transform: uppercase;
+    }
+
+    .segmented {
+      display: grid;
+      grid-template-columns: repeat(3, 1fr);
+      gap: 8px;
+    }
+
+    .seg-btn {
+      border: 1px solid #3a3a3a;
+      background: #262626;
+      color: var(--text-muted);
+      border-radius: 12px;
+      padding: 10px 8px;
+      font-size: 13px;
+      font-weight: 800;
+      cursor: pointer;
+      text-align: center;
+    }
+
+    .seg-btn.active {
+      background: #313131;
+      color: var(--text);
+      border-color: #555;
+    }
+
+    .chip-grid {
+      display: grid;
+      grid-template-columns: repeat(2, 1fr);
+      gap: 8px;
+    }
+
+    .chip-btn {
+  background: #2b2b2b;
+  color: #ddd;
+  border: 1px solid #555;
+  border-radius: 999px;
+  padding: 10px 14px;
+  font-size: 14px;
+  font-weight: 700;
+  cursor: pointer;
+  transition: all 0.18s ease;
+}
+
+.chip-btn:hover {
+  background: #3a3a3a;
+  border-color: #777;
+}
+
+.chip-btn.active {
+  background: linear-gradient(180deg, #5a5a5a 0%, #3f3f3f 100%);
+  color: #fff;
+  border-color: #707070;
+  box-shadow: 0 0 0 2px rgba(120, 120, 120, 0.18), 0 4px 14px rgba(0, 0, 0, 0.28);
+}
+
+    .drawer-select {
+      width: 100%;
+      border-radius: 12px;
+      border: 1px solid #444;
+      background: #262626;
+      color: var(--text);
+      padding: 12px 12px;
+      font-size: 14px;
+      outline: none;
+    }
+
+    .drawer-footer {
+      border-top: 1px solid rgba(255,255,255,0.05);
+      padding: 14px 16px 16px;
+      display: grid;
+      grid-template-columns: 1fr 1fr;
+      gap: 10px;
+      flex-shrink: 0;
+      background: #1d1d1d;
+    }
+
+    .modal {
+      display: none;
+      position: fixed;
+      inset: 0;
+      z-index: 1600;
+      background: rgba(0,0,0,0.72);
+      align-items: center;
+      justify-content: center;
+      padding: 16px;
+    }
+
+    .modal.open {
+      display: flex;
+    }
+
+    .modal-card {
+      width: min(100%, 720px);
+      max-height: 90vh;
+      overflow-y: auto;
+      background: var(--panel);
+      border: 1px solid var(--border);
+      border-radius: 20px;
+      box-shadow: var(--shadow);
+      position: relative;
+      padding: 22px;
+    }
+
+    .modal-card.narrow {
+      max-width: 540px;
+    }
+
+    .modal-close {
+      position: sticky;
+      top: 0;
+      margin-left: auto;
+      display: flex;
+      justify-content: flex-end;
+      background: linear-gradient(to bottom, var(--panel) 65%, rgba(32,32,32,0));
+      padding-bottom: 8px;
+      z-index: 5;
+    }
+
+    .modal-close button {
+      width: 36px;
+      height: 36px;
+      border: none;
+      border-radius: 50%;
+      background: var(--danger);
+      color: #fff;
+      font-size: 20px;
+      font-weight: 900;
+      cursor: pointer;
+    }
+
+    .modal-title {
+      margin: 0 0 8px 0;
+      font-size: 24px;
+      line-height: 1.1;
+      font-weight: 900;
+      color: var(--text);
+    }
+
+    .modal-intro {
+      margin: 0;
+      color: var(--text-muted);
+      font-size: 14px;
+      line-height: 1.55;
+    }
+
+    .support-grid {
+      display: grid;
+      gap: 14px;
+      margin-top: 18px;
+    }
+
+    .support-card {
+      background: var(--panel-2);
+      border: 1px solid #3a3a3a;
+      border-radius: 16px;
+      padding: 16px;
+    }
+
+    .support-card-title {
+      font-size: 17px;
+      font-weight: 900;
+      color: var(--text);
+      margin: 0 0 8px 0;
+    }
+
+    .support-card-text {
+      font-size: 14px;
+      line-height: 1.5;
+      color: var(--text-muted);
+      margin: 0 0 14px 0;
+    }
+
+    .support-note {
+      margin-top: 14px;
+      font-size: 12px;
+      color: var(--text-soft);
+      line-height: 1.45;
+    }
+
+    .thanks-list {
+      display: grid;
+      gap: 12px;
+      margin-top: 18px;
+    }
+
+    .thanks-card {
+      background: var(--panel-2);
+      border: 1px solid #3a3a3a;
+      border-radius: 16px;
+      padding: 14px;
+      display: grid;
+      gap: 10px;
+    }
+
+    .thanks-name {
+      font-size: 16px;
+      font-weight: 900;
+      color: var(--text);
+      margin: 0;
+    }
+
+    .thanks-place {
+      font-size: 12px;
+      color: var(--text-soft);
+      margin-top: 3px;
+    }
+
+    .thanks-note {
+      font-size: 14px;
+      color: #ddd;
+      line-height: 1.5;
+    }
+
+    .thanks-photo {
+      width: 100%;
+      border-radius: 12px;
+      border: 1px solid #333;
+      object-fit: cover;
+      max-height: 240px;
+    }
+
+    .stats-filter-row {
+      margin-top: 12px;
+      margin-bottom: 16px;
+    }
+
+    .stats-grid {
+      display: grid;
+      grid-template-columns: repeat(3, minmax(0, 1fr));
+      gap: 12px;
+    }
+
+    .stats-card {
+      background: var(--panel-2);
+      border: 1px solid #3a3a3a;
+      border-radius: 16px;
+      padding: 14px;
+      min-height: 94px;
+    }
+
+    .stats-card.wide {
+      grid-column: 1 / -1;
+    }
+
+    .stats-k {
+      font-size: 11px;
+      color: var(--text-soft);
+      text-transform: uppercase;
+      letter-spacing: 0.4px;
+      font-weight: 800;
+      margin-bottom: 8px;
+    }
+
+    .stats-v {
+      font-size: 22px;
+      line-height: 1.05;
+      font-weight: 900;
+      color: var(--text);
+    }
+
+    .leaflet-popup-content-wrapper {
+      background: #232323;
+      color: var(--text);
+      border: 1px solid var(--border);
+      border-radius: 14px;
+    }
+
+    .leaflet-popup-tip {
+      background: #232323;
+      border: 1px solid var(--border);
+    }
+
+    .popup-title {
+      font-weight: 900;
+      color: var(--text);
+      margin-bottom: 6px;
+      font-size: 16px;
+      line-height: 1.25;
+    }
+
+    .popup-meta {
+      font-size: 12px;
+      color: var(--text-muted);
+      margin-bottom: 8px;
+      line-height: 1.4;
+    }
+
+    .popup-text {
+      font-size: 13px;
+      color: #e1e1e1;
+      line-height: 1.45;
+    }
+
+    .popup-img {
+      width: 100%;
+      border-radius: 10px;
+      margin-top: 10px;
+      cursor: pointer;
+      border: 1px solid #343434;
+    }
+
+    .popup-video iframe {
+      width: 100%;
+      height: 180px;
+      border-radius: 10px;
+      margin-top: 10px;
+      border: none;
+    }
+
+    .popup-cta {
+      margin-top: 12px;
+      width: 100%;
+      border: none;
+      border-radius: 10px;
+      background: #313131;
+      color: var(--text);
+      font-size: 13px;
+      font-weight: 800;
+      padding: 10px 12px;
+      cursor: pointer;
+    }
+
+    .popup-cta.primary {
+      background: var(--brand);
+      color: white;
+    }
+
+    .custom-marker {
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      width: 34px !important;
+      height: 34px !important;
+      border-radius: 50%;
+      font-size: 18px;
+      border: 2px solid #fff;
+      box-shadow: 0 4px 10px rgba(0,0,0,0.55);
+      margin-left: -17px !important;
+      margin-top: -17px !important;
+      color: #fff;
+      z-index: 1000 !important;
+    }
+
+    .marker-foto { background: var(--photo); }
+    .marker-video { background: var(--yt); font-size: 14px; }
+    .marker-maint { background: var(--maint); }
+    .marker-fuel  { background: var(--fuel); }
+    .marker-carb  { background: var(--carb); }
+    .marker-note  { background: var(--note); }
+
+    #lightbox {
+      display: none;
+      position: fixed;
+      inset: 0;
+      background: rgba(0,0,0,0.95);
+      z-index: 9999;
+      align-items: center;
+      justify-content: center;
+    }
+
+    #lightbox.open { display: flex; }
+
+    #lightbox img {
+      max-width: 95vw;
+      max-height: 90vh;
+      border-radius: 10px;
+    }
+
+    #lightboxClose {
+      position: absolute;
+      top: 15px;
+      right: 15px;
+      background: var(--danger);
+      color: #fff;
+      border: none;
+      width: 42px;
+      height: 42px;
+      border-radius: 50%;
+      font-size: 20px;
+      font-weight: bold;
+      cursor: pointer;
+    }
+
+    .graph-box {
+      background: #171717;
+      border: 1px solid #333;
+      border-radius: 14px;
+      padding: 12px;
+      margin-top: 10px;
+    }
+
+    @media (max-width: 820px) {
+      #topBar {
+        padding: 10px 12px 10px;
+      }
+
+      .topbar-main {
+        align-items: flex-start;
+        flex-direction: column;
+      }
+
+      .header-right {
+        width: 100%;
+        justify-content: space-between;
+      }
+
+      .brand-title {
+        font-size: 20px;
+      }
+
+      .stats-pills {
+        overflow-x: auto;
+        flex-wrap: nowrap;
+        padding-bottom: 2px;
+      }
+
+      .stat-pill {
+        flex: 0 0 auto;
+      }
+
+      .map-actions {
+        top: 12px;
+        left: 12px;
+        right: 12px;
+      }
+
+      .floating-btn {
+        padding: 10px 12px;
+        font-size: 13px;
+      }
+
+      #filtersDrawer {
+        top: auto;
+        bottom: 0;
+        left: 0;
+        width: 100%;
+        height: min(85vh, 760px);
+        border-right: none;
+        border-top: 1px solid var(--border);
+        border-radius: 20px 20px 0 0;
+        transform: translateY(100%);
+      }
+
+      #filtersDrawer.open {
+        transform: translateY(0);
+      }
+
+      .segmented {
+        grid-template-columns: 1fr;
+      }
+
+      .chip-grid {
+        grid-template-columns: 1fr 1fr;
+      }
+
+      .drawer-footer {
+        grid-template-columns: 1fr 1fr;
+      }
+
+      .modal-card {
+        width: 100%;
+        max-width: 100%;
+        border-radius: 18px;
+        padding: 18px;
+      }
+
+      .stats-grid {
+        grid-template-columns: 1fr 1fr;
+      }
+
+      .stats-card.wide {
+        grid-column: 1 / -1;
+      }
+    }
+
+    @media (max-width: 520px) {
+      .header-right {
+        gap: 8px;
+      }
+
+      .socials {
+        gap: 6px;
+      }
+
+      .btn {
+        padding: 10px 12px;
+        font-size: 13px;
+      }
+
+      .lang-btn {
+        padding: 8px 9px;
+      }
+
+      .chip-grid {
+        grid-template-columns: 1fr;
+      }
+
+      .stats-grid {
+        grid-template-columns: 1fr;
+      }
+    }
+  </style>
+</head>
+
+<body>
+  <div id="appShell">
+    <div id="topBar">
+      <div class="topbar-main">
+        <div class="brand-block">
+          <div class="brand-copy">
+            <div id="appTitle" class="brand-title">VespaTrek PX150</div>
+            <div id="appSubtitle" class="brand-subtitle">Mappa live del viaggio in Sud America</div>
+          </div>
+        </div>
+
+        <div class="header-right">
+          <div class="lang-switch" aria-label="Language switch">
+            <button class="lang-btn" id="langBtnIt" onclick="setLang('it')">IT</button>
+            <button class="lang-btn" id="langBtnEs" onclick="setLang('es')">ES</button>
+            <button class="lang-btn" id="langBtnEn" onclick="setLang('en')">EN</button>
+          </div>
+
+          <div class="socials">
+            <a class="social-link ig" href="https://www.instagram.com/lapizzadidavide?utm_source=qr&igsh=cDU0ZXBhYTNpb3dr" target="_blank" rel="noopener" aria-label="Instagram">
+              <svg viewBox="0 0 24 24" aria-hidden="true">
+                <path fill="currentColor" d="M7 2h10a5 5 0 0 1 5 5v10a5 5 0 0 1-5 5H7a5 5 0 0 1-5-5V7a5 5 0 0 1 5-5Zm10 2H7a3 3 0 0 0-3 3v10a3 3 0 0 0 3 3h10a3 3 0 0 0 3-3V7a3 3 0 0 0-3-3Zm-5 4.2A3.8 3.8 0 1 1 8.2 12 3.8 3.8 0 0 1 12 8.2Zm0 2A1.8 1.8 0 1 0 13.8 12 1.8 1.8 0 0 0 12 10.2ZM17.6 6.7a.9.9 0 1 1-.9.9.9.9 0 0 1 .9-.9Z"/>
+              </svg>
+            </a>
+
+            <a class="social-link yt" href="https://youtube.com/@davidegangale?si=L5182Vj_sBj9rTxY" target="_blank" rel="noopener" aria-label="YouTube">
+              <svg viewBox="0 0 24 24" aria-hidden="true">
+                <path fill="currentColor" d="M21.6 7.2a3 3 0 0 0-2.1-2.1C17.7 4.6 12 4.6 12 4.6s-5.7 0-7.5.5A3 3 0 0 0 2.4 7.2 31.6 31.6 0 0 0 2 12a31.6 31.6 0 0 0 .4 4.8 3 3 0 0 0 2.1 2.1c1.8.5 7.5.5 7.5.5s5.7 0 7.5-.5a3 3 0 0 0 2.1-2.1A31.6 31.6 0 0 0 22 12a31.6 31.6 0 0 0-.4-4.8ZM10 15.5v-7l6 3.5-6 3.5Z"/>
+              </svg>
+            </a>
+          </div>
+
+          <button id="btnThanksOpen" class="btn btn-secondary" onclick="openThanksModal()">🙏 Ringraziamenti</button>
+          <button id="btnHost" class="btn btn-primary" onclick="openHostForm()">🤝 Supporta il viaggio</button>
+        </div>
+      </div>
+
+      <div class="stats-pills">
+        <div class="stat-pill">
+          <span class="label" id="pillKmLabel">Totale</span>
+          <span class="value" id="pillKmValue">...</span>
+        </div>
+        <div class="stat-pill">
+          <span class="label" id="pillFuelLabel">Benzina</span>
+          <span class="value" id="pillFuelValue">...</span>
+        </div>
+      </div>
+    </div>
+
+    <div id="mapWrap">
+      <div class="map-actions">
+        <button id="btnOpenFilters" class="floating-btn" onclick="openFiltersDrawer()">🧭 <strong>Filtri</strong></button>
+        <button id="btnStats" class="floating-btn" onclick="apriStats()">📊 <strong>Statistiche</strong></button>
+      </div>
+
+      <div id="mapPub"></div>
+    </div>
+  </div>
+
+  <div id="filtersBackdrop" onclick="closeFiltersDrawer()"></div>
+
+  <div id="filtersDrawer" aria-hidden="true">
+    <div class="drawer-head">
+      <div id="filtersTitle" class="drawer-title">Filtri mappa</div>
+      <button class="icon-close" onclick="closeFiltersDrawer()">×</button>
+    </div>
+
+    <div class="drawer-body">
+      <div class="field-group">
+        <label id="filterModeLabel" class="field-label">Tipo percorso</label>
+        <div class="segmented">
+          <button id="modeBtnAll" class="seg-btn" onclick="setMode('TUTTO', true)">🛣️ Tutto</button>
+          <button id="modeBtnTappe" class="seg-btn" onclick="setMode('TAPPE', true)">🏁 Tappe</button>
+          <button id="modeBtnGiri" class="seg-btn" onclick="setMode('GIRI', true)">🛵 Giri</button>
+        </div>
+      </div>
+
+      <div class="field-group">
+        <label id="filterMonthLabel" for="monthSelect" class="field-label">Periodo</label>
+        <select id="monthSelect" class="drawer-select" onchange="setMonthFilter(this.value, true)">
+          <option value="">🗓️ Tutti i mesi</option>
+        </select>
+      </div>
+
+      <div class="field-group">
+        <label id="filterCountryLabel" for="selectCountry" class="field-label">Paese</label>
+        <select id="selectCountry" class="drawer-select" onchange="setCountry(this.value, true)">
+          <option value="">🌎 Globale</option>
+        </select>
+      </div>
+
+      <div class="field-group">
+        <label id="filterMarkerLabel" class="field-label">Marker</label>
+        <div class="chip-grid">
+          <button id="markerBtnAll" class="chip-btn" onclick="setMarkerFilter('ALL', true)">📍 Tutti</button>
+          <button id="markerBtnNone" class="chip-btn" onclick="setMarkerFilter('NONE', true)">🚫 Nessuno</button>
+          <button id="markerBtnFoto" class="chip-btn" onclick="setMarkerFilter('FOTO', true)">📷 Foto</button>
+          <button id="markerBtnVideo" class="chip-btn" onclick="setMarkerFilter('VIDEO', true)">▶️ Video</button>
+          <button id="markerBtnMaint" class="chip-btn" onclick="setMarkerFilter('MAINT', true)">🔧 Officina</button>
+          <button id="markerBtnFuel" class="chip-btn" onclick="setMarkerFilter('FUEL', true)">⛽ Rifornimenti</button>
+          <button id="markerBtnCarb" class="chip-btn" onclick="setMarkerFilter('CARB', true)">🌬️ Carburazione</button>
+        </div>
+      </div>
+    </div>
+
+    <div class="drawer-footer">
+      <button id="btnResetFilters" class="btn btn-secondary" onclick="resetFilters()">Reimposta</button>
+      <button id="btnApplyFilters" class="btn btn-primary" onclick="applyFiltersAndClose()">Applica</button>
+    </div>
+  </div>
+
+  <div id="statsModal" class="modal">
+    <div class="modal-card">
+      <div class="modal-close">
+        <button onclick="closeStatsModal()">×</button>
+      </div>
+
+      <h2 id="statsModalTitle" class="modal-title">📊 Statistiche</h2>
+      <p id="statsModalIntro" class="modal-intro">Un riepilogo semplice del viaggio e delle spese principali.</p>
+
+      <div class="stats-filter-row">
+        <select id="statsCountryFilter" class="drawer-select" onchange="renderStatsDati()">
+          <option value="GLOBAL">🌎 Globali</option>
+        </select>
+      </div>
+
+      <div id="statsModalContent" class="stats-grid"></div>
+    </div>
+  </div>
+
+  <div id="hostModal" class="modal">
+    <div class="modal-card narrow">
+      <div class="modal-close">
+        <button onclick="closeHostForm()">×</button>
+      </div>
+
+      <h2 id="hostModalTitle" class="modal-title">Vuoi dare una mano al viaggio?</h2>
+      <p id="hostText1" class="modal-intro">
+        Se vivi lungo il percorso e vuoi offrire un aiuto, un consiglio, un posto per dormire o organizzare un incontro, puoi scrivermi qui. Leggo tutto e rispondo quando il tragitto lo permette.
+      </p>
+
+      <div class="support-grid">
+        <div class="support-card">
+          <h3 id="supportCard1Title" class="support-card-title">Aiuto individuale</h3>
+          <p id="supportCard1Text" class="support-card-text">
+            Ospitalità, spazio per la tenda, un consiglio sulla zona, un aiuto pratico o anche solo un caffè lungo la strada.
+          </p>
+          <button id="hostOpenFormBtn" class="btn btn-primary" onclick="goToHostExternalForm()">Offri un aiuto</button>
+        </div>
+
+        <div class="support-card">
+          <h3 id="vespaClubTitle" class="support-card-title">Vespa Club / gruppo</h3>
+          <p id="vespaClubText" class="support-card-text">
+            Se fai parte di un Vespa Club o di un gruppo vespista, possiamo provare a organizzare un incontro o un giro in città.
+          </p>
+          <button id="vespaClubBtn" class="btn btn-secondary" onclick="goToVespaClubForm()">Proponi un incontro</button>
+        </div>
+      </div>
+
+      <div id="hostText3" class="support-note">
+        Ogni proposta è preziosa, ma non sempre riuscirò a organizzarmi in base a tempi e percorso.
+      </div>
+    </div>
+  </div>
+
+  <div id="thanksModal" class="modal">
+    <div class="modal-card narrow">
+      <div class="modal-close">
+        <button onclick="closeThanksModal()">×</button>
+      </div>
+
+      <h2 id="thanksModalTitle" class="modal-title">🙏 Ringraziamenti</h2>
+      <p id="thanksModalIntro" class="modal-intro">
+        Questo viaggio esiste anche grazie alle persone incontrate lungo la strada.
+      </p>
+
+      <div id="thanksModalList" class="thanks-list"></div>
+    </div>
+  </div>
+
+  <div id="graphModal" class="modal">
+    <div class="modal-card" style="max-width: 860px;">
+      <div class="modal-close">
+        <button onclick="closeGraphModal()">×</button>
+      </div>
+
+      <h2 id="graphTitle" class="modal-title">📈 Grafico</h2>
+
+      <div class="graph-box">
+        <div style="font-size:12px;color:#aaa;margin-bottom:6px;">Altitudine</div>
+        <canvas id="cvAltPub" style="width:100%; height:160px; display:block;"></canvas>
+      </div>
+
+      <div class="graph-box">
+        <div style="font-size:12px;color:#aaa;margin-bottom:6px;">Velocità</div>
+        <canvas id="cvSpdPub" style="width:100%; height:160px; display:block;"></canvas>
+      </div>
+
+      <div id="graphInfo" style="font-size:12px;color:#888;text-align:left;margin-top:10px;"></div>
+    </div>
+  </div>
+
+  <div id="lightbox" onclick="closeLightbox()">
+    <button id="lightboxClose" onclick="event.stopPropagation(); closeLightbox()">×</button>
+    <img id="lightboxImg" onclick="event.stopPropagation();">
+  </div>
+
+<script>
+let DATA = null;
+let INDEX_DATA = null;
+let OFFICINA_DATA = null;
+let PAESI_CACHE = {};
+
+let map = null;
+let layerTracce = null;
+let layerMarkers = null;
+let canvasRenderer = null;
+let MARKER_POSITION_COUNT = {};
+
+let HOST_FORM_URL = '';
+let VESPA_CLUB_FORM_URL = '';
+let THANKS_DATA = [];
+
+  function noCacheUrl(url) {
+  const sep = String(url).includes('?') ? '&' : '?';
+  return String(url) + sep + 'v=' + Date.now();
+}
+
+let currentMode = 'TUTTO';
+let currentCountry = '';
+let currentMarkerFilters = {
+  FOTO: true,
+  VIDEO: true,
+  MAINT: true,
+  FUEL: true,
+  CARB: true
+};
+let currentMonthFilter = '';
+
+let LANG = localStorage.getItem('vt_pub_lang') || 'it';
+
+const I18N = {
+  it: {
+    live: 'VespaTrek PX150',
+    subtitle: 'Mappa live del viaggio in Sud America',
+    allTracks: '🛣️ Tutto',
+    onlyTappe: '🏁 Tappe',
+    onlyGiri: '🛵 Giri',
+    allMarkers: '📍 Tutti',
+    allMonths: '🗓️ Tutti i mesi',
+    noMarkers: '🚫 Nessuno',
+    foto: '📷 Foto',
+    video: '▶️ Video',
+    maint: '🔧 Officina',
+    fuel: '⛽ Rifornimenti',
+    carb: '🌬️ Carburazione',
+    statsBtn: '📊 Statistiche',
+    statsTitle: '📊 Statistiche',
+    statsIntro: 'Un riepilogo semplice del viaggio e delle spese principali.',
+    global: '🌎 Globale',
+    loading: 'Caricamento...',
+    totalLbl: 'Totale',
+    fuelLbl: 'Benzina',
+    tappa: 'TAPPA',
+    giri: 'GIRI',
+    time: '⏱️ Tempo',
+    alt: '⛰️ Alt',
+    speedMax: '🏎️ Vel. max',
+    speedAvg: 'Media',
+    fuelEst: '⛽ Benzina stimata',
+    fuelReal: '🔥 Benzina reale',
+    graph: '📈 Grafico',
+    refuel: '⛽ Rifornimento',
+    paid: 'Pagato',
+    destination: 'Destinazione',
+    workshop: '🔧 Officina',
+    cost: 'Costo',
+    carbSetup: '🌬️ Setup carburatore',
+    altitude: 'Altitudine',
+    filters: '🧭 Filtri',
+    filtersTitle: 'Filtri mappa',
+    filterMode: 'Tipo percorso',
+    filterMonth: 'Periodo',
+    filterCountry: 'Paese',
+    filterMarker: 'Marker',
+    resetFilters: 'Reimposta',
+    applyFilters: 'Applica',
+    hostBtn: '🤝 Supporta il viaggio',
+    thanksBtn: '🙏 Ringraziamenti',
+    hostTitle: 'Vuoi dare una mano al viaggio?',
+    hostText1: 'Se vivi lungo il percorso e vuoi offrire un aiuto, un consiglio, un posto per dormire o organizzare un incontro, puoi scrivermi qui. Leggo tutto e rispondo quando il tragitto lo permette.',
+    hostText3: 'Ogni proposta è preziosa, ma non sempre riuscirò a organizzarmi in base a tempi e percorso.',
+    supportCard1Title: 'Aiuto individuale',
+    supportCard1Text: 'Ospitalità, spazio per la tenda, un consiglio sulla zona, un aiuto pratico o anche solo un caffè lungo la strada.',
+    hostOpenForm: 'Offri un aiuto',
+    vespaClubTitle: 'Vespa Club / gruppo',
+    vespaClubText: 'Se fai parte di un Vespa Club o di un gruppo vespista, possiamo provare a organizzare un incontro o un giro in città.',
+    vespaClubBtn: 'Proponi un incontro',
+    thanksTitle: '🙏 Ringraziamenti',
+    thanksIntro: 'Questo viaggio esiste anche grazie alle persone incontrate lungo la strada.',
+    thanksEmpty: 'Nessun ringraziamento pubblicato per ora.',
+    hostFormUnavailable: 'Link del modulo non disponibile al momento',
+    vespaClubFormUnavailable: 'Link del modulo Vespa Club non disponibile al momento',
+    statsKmTotal: 'KM TOTALI',
+    statsFuelUsed: 'BENZINA USATA',
+    statsOilUsed: 'OLIO 2T USATO',
+    statsWorkshopCost: 'SPESA OFFICINA',
+    statsFuelCost: 'SPESA BENZINA',
+    statsOilCost: 'SPESA OLIO 2T',
+    statsAvgConsumption: 'CONSUMO MEDIO',
+    videoComing: '🎬 Video in arrivo'
+  },
+  en: {
+    live: 'VespaTrek PX150',
+    subtitle: 'Live map of the South America journey',
+    allTracks: '🛣️ All',
+    onlyTappe: '🏁 Trips',
+    onlyGiri: '🛵 Rides',
+    allMarkers: '📍 All',
+    allMonths: '🗓️ All months',
+    noMarkers: '🚫 None',
+    foto: '📷 Photos',
+    video: '▶️ Videos',
+    maint: '🔧 Workshop',
+    fuel: '⛽ Fuel',
+    carb: '🌬️ Carb',
+    statsBtn: '📊 Stats',
+    statsTitle: '📊 Stats',
+    statsIntro: 'A simple summary of the journey and the main expenses.',
+    global: '🌎 Global',
+    loading: 'Loading...',
+    totalLbl: 'Total',
+    fuelLbl: 'Fuel',
+    tappa: 'TRIP',
+    giri: 'RIDE',
+    time: '⏱️ Time',
+    alt: '⛰️ Alt',
+    speedMax: '🏎️ Max speed',
+    speedAvg: 'Avg',
+    fuelEst: '⛽ Estimated fuel',
+    fuelReal: '🔥 Real fuel',
+    graph: '📈 Chart',
+    refuel: '⛽ Refuel',
+    paid: 'Paid',
+    destination: 'Destination',
+    workshop: '🔧 Workshop',
+    cost: 'Cost',
+    carbSetup: '🌬️ Carb setup',
+    altitude: 'Altitude',
+    filters: '🧭 Filters',
+    filtersTitle: 'Map filters',
+    filterMode: 'Route type',
+    filterMonth: 'Period',
+    filterCountry: 'Country',
+    filterMarker: 'Markers',
+    resetFilters: 'Reset',
+    applyFilters: 'Apply',
+    hostBtn: '🤝 Support the journey',
+    thanksBtn: '🙏 Thanks',
+    hostTitle: 'Would you like to help this journey?',
+    hostText1: 'If you live along the route and would like to offer help, advice, a place to sleep or organize a meetup, you can write to me here. I read everything and reply when the route allows it.',
+    hostText3: 'Every offer matters, but I may not always be able to organize things depending on timing and route.',
+    supportCard1Title: 'Individual help',
+    supportCard1Text: 'A place to stay, tent space, local advice, practical help or even just a coffee along the way.',
+    hostOpenForm: 'Offer help',
+    vespaClubTitle: 'Vespa Club / group',
+    vespaClubText: 'If you are part of a Vespa Club or Vespa riders group, we can try to organize a meetup or a ride in your city.',
+    vespaClubBtn: 'Suggest a meetup',
+    thanksTitle: '🙏 Thanks',
+    thanksIntro: 'This journey also exists thanks to the people met along the road.',
+    thanksEmpty: 'No public thanks yet.',
+    hostFormUnavailable: 'Form link is currently unavailable',
+    vespaClubFormUnavailable: 'Vespa Club form link is currently unavailable',
+    statsKmTotal: 'TOTAL KM',
+    statsFuelUsed: 'FUEL USED',
+    statsOilUsed: '2T OIL USED',
+    statsWorkshopCost: 'WORKSHOP COST',
+    statsFuelCost: 'FUEL COST',
+    statsOilCost: '2T OIL COST',
+    statsAvgConsumption: 'AVERAGE CONSUMPTION',
+    videoComing: '🎬 Video coming soon'
+  },
+  es: {
+    live: 'VespaTrek PX150',
+    subtitle: 'Mapa en vivo del viaje por Sudamérica',
+    allTracks: '🛣️ Todo',
+    onlyTappe: '🏁 Etapas',
+    onlyGiri: '🛵 Paseos',
+    allMarkers: '📍 Todos',
+    allMonths: '🗓️ Todos los meses',
+    noMarkers: '🚫 Ninguno',
+    foto: '📷 Fotos',
+    video: '▶️ Videos',
+    maint: '🔧 Taller',
+    fuel: '⛽ Repostajes',
+    carb: '🌬️ Carburación',
+    statsBtn: '📊 Estadísticas',
+    statsTitle: '📊 Estadísticas',
+    statsIntro: 'Un resumen simple del viaje y de los gastos principales.',
+    global: '🌎 Global',
+    loading: 'Cargando...',
+    totalLbl: 'Total',
+    fuelLbl: 'Gasolina',
+    tappa: 'ETAPA',
+    giri: 'PASEO',
+    time: '⏱️ Tiempo',
+    alt: '⛰️ Alt',
+    speedMax: '🏎️ Vel. máx',
+    speedAvg: 'Media',
+    fuelEst: '⛽ Gasolina estimada',
+    fuelReal: '🔥 Gasolina real',
+    graph: '📈 Gráfico',
+    refuel: '⛽ Repostaje',
+    paid: 'Pagado',
+    destination: 'Destino',
+    workshop: '🔧 Taller',
+    cost: 'Costo',
+    carbSetup: '🌬️ Carburación',
+    altitude: 'Altitud',
+    filters: '🧭 Filtros',
+    filtersTitle: 'Filtros del mapa',
+    filterMode: 'Tipo de ruta',
+    filterMonth: 'Periodo',
+    filterCountry: 'País',
+    filterMarker: 'Marcadores',
+    resetFilters: 'Reiniciar',
+    applyFilters: 'Aplicar',
+    hostBtn: '🤝 Apoya el viaje',
+    thanksBtn: '🙏 Agradecimientos',
+    hostTitle: '¿Quieres dar una mano al viaje?',
+    hostText1: 'Si vives a lo largo de la ruta y quieres ofrecer ayuda, un consejo, un lugar para dormir u organizar un encuentro, puedes escribirme aquí. Leo todo y respondo cuando el trayecto lo permite.',
+    hostText3: 'Cada propuesta es valiosa, pero no siempre podré organizarme según el tiempo y la ruta.',
+    supportCard1Title: 'Ayuda individual',
+    supportCard1Text: 'Hospedaje, espacio para la tienda, un consejo sobre la zona, ayuda práctica o incluso solo un café en el camino.',
+    hostOpenForm: 'Ofrece ayuda',
+    vespaClubTitle: 'Vespa Club / grupo',
+    vespaClubText: 'Si formas parte de un Vespa Club o de un grupo vespista, podemos intentar organizar un encuentro o una rodada en tu ciudad.',
+    vespaClubBtn: 'Propón un encuentro',
+    thanksTitle: '🙏 Agradecimientos',
+    thanksIntro: 'Este viaje también existe gracias a las personas encontradas en el camino.',
+    thanksEmpty: 'Todavía no hay agradecimientos públicos.',
+    hostFormUnavailable: 'El enlace del formulario no está disponible en este momento',
+    vespaClubFormUnavailable: 'El enlace del formulario Vespa Club no está disponible en este momento',
+    statsKmTotal: 'KM TOTALES',
+    statsFuelUsed: 'GASOLINA USADA',
+    statsOilUsed: 'ACEITE 2T USADO',
+    statsWorkshopCost: 'GASTO DE TALLER',
+    statsFuelCost: 'GASTO DE GASOLINA',
+    statsOilCost: 'GASTO DE ACEITE 2T',
+    statsAvgConsumption: 'CONSUMO MEDIO',
+    videoComing: '🎬 Video próximamente'
+  }
+};
+
+function T(key) {
+  const d = I18N[LANG] || I18N.it;
+  return d[key] ?? (I18N.it[key] ?? key);
+}
+
+function getYearMonthFromPublicEntry(entry) {
+  if (entry && entry.ts) {
+    const d = new Date(Number(entry.ts));
+    if (!isNaN(d.getTime())) {
+      const y = d.getFullYear();
+      const m = String(d.getMonth() + 1).padStart(2, '0');
+      return `${y}-${m}`;
+    }
+  }
+
+  const ds = String(entry?.data || '').trim();
+  const m = ds.match(/^(\d{1,2})\/(\d{1,2})\/(\d{4})$/);
+  if (m) return `${m[3]}-${String(m[2]).padStart(2, '0')}`;
+  return '';
+}
+
+function getYearMonthFromPercorso(entry) {
+  if (entry && entry.ts) {
+    const d = new Date(Number(entry.ts));
+    if (!isNaN(d.getTime())) {
+      const y = d.getFullYear();
+      const m = String(d.getMonth() + 1).padStart(2, '0');
+      return `${y}-${m}`;
+    }
+  }
+
+  const ds = String(entry?.data || '').trim();
+  let m = ds.match(/^(\d{1,2})\/(\d{1,2})\/(\d{4})$/);
+  if (m) return `${m[3]}-${String(m[2]).padStart(2, '0')}`;
+
+  m = ds.match(/^(\d{4})-(\d{1,2})-(\d{1,2})$/);
+  if (m) return `${m[1]}-${String(m[2]).padStart(2, '0')}`;
+
+  return '';
+}
+
+function setLang(l) {
+  LANG = l || 'it';
+  localStorage.setItem('vt_pub_lang', LANG);
+  applyLang();
+  updateStatsMini();
+  renderMap();
+  if (document.getElementById('statsModal')?.classList.contains('open')) renderStatsDati();
+}
+
+function updateLangButtons() {
+  document.getElementById('langBtnIt').classList.toggle('active', LANG === 'it');
+  document.getElementById('langBtnEs').classList.toggle('active', LANG === 'es');
+  document.getElementById('langBtnEn').classList.toggle('active', LANG === 'en');
+}
+
+function applyLang() {
+  const title = (DATA && DATA.titolo) ? DATA.titolo : T('live');
+  document.getElementById('appTitle').innerText = title;
+  document.getElementById('appSubtitle').innerText = T('subtitle');
+
+  document.getElementById('btnOpenFilters').innerHTML = `🧭 <strong>${T('filters').replace('🧭 ', '')}</strong>`;
+  document.getElementById('btnStats').innerHTML = `📊 <strong>${T('statsBtn').replace('📊 ', '')}</strong>`;
+
+  document.getElementById('btnHost').innerText = T('hostBtn');
+  document.getElementById('btnThanksOpen').innerText = T('thanksBtn');
+
+  document.getElementById('pillKmLabel').innerText = T('totalLbl');
+  document.getElementById('pillFuelLabel').innerText = T('fuelLbl');
+
+  document.getElementById('filtersTitle').innerText = T('filtersTitle');
+  document.getElementById('filterModeLabel').innerText = T('filterMode');
+  document.getElementById('filterMonthLabel').innerText = T('filterMonth');
+  document.getElementById('filterCountryLabel').innerText = T('filterCountry');
+  document.getElementById('filterMarkerLabel').innerText = T('filterMarker');
+
+  document.getElementById('btnResetFilters').innerText = T('resetFilters');
+  document.getElementById('btnApplyFilters').innerText = T('applyFilters');
+
+  document.getElementById('modeBtnAll').innerText = T('allTracks');
+  document.getElementById('modeBtnTappe').innerText = T('onlyTappe');
+  document.getElementById('modeBtnGiri').innerText = T('onlyGiri');
+
+  document.getElementById('markerBtnAll').innerText = T('allMarkers');
+  document.getElementById('markerBtnNone').innerText = T('noMarkers');
+  document.getElementById('markerBtnFoto').innerText = T('foto');
+  document.getElementById('markerBtnVideo').innerText = T('video');
+  document.getElementById('markerBtnMaint').innerText = T('maint');
+  document.getElementById('markerBtnFuel').innerText = T('fuel');
+  document.getElementById('markerBtnCarb').innerText = T('carb');
+
+  document.getElementById('statsModalTitle').innerText = T('statsTitle');
+  document.getElementById('statsModalIntro').innerText = T('statsIntro');
+
+  const firstStatsOpt = document.querySelector('#statsCountryFilter option[value="GLOBAL"]');
+  if (firstStatsOpt) firstStatsOpt.innerText = T('global');
+
+  const firstCountryOpt = document.querySelector('#selectCountry option[value=""]');
+  if (firstCountryOpt) firstCountryOpt.innerText = T('global');
+
+  const firstMonthOpt = document.querySelector('#monthSelect option[value=""]');
+  if (firstMonthOpt) firstMonthOpt.innerText = T('allMonths');
+
+  updateHostModalTexts();
+  renderThanksModalList();
+  updateLangButtons();
+  syncFilterButtonsUI();
+}
+
+async function loadHostConfig() {
+  try {
+    const res = await fetch(noCacheUrl('public/host_config.json?v=' + Date.now()));
+    if (!res.ok) throw new Error('Errore caricamento host_config.json');
+    const cfg = await res.json();
+    HOST_FORM_URL = String(cfg.hostFormUrl || '').trim();
+    VESPA_CLUB_FORM_URL = String(cfg.vespaClubFormUrl || '').trim();
+  } catch (e) {
+    console.error(e);
+    HOST_FORM_URL = '';
+    VESPA_CLUB_FORM_URL = '';
+  }
+}
+
+async function loadThanksData() {
+  try {
+    const urlParams = new URLSearchParams(window.location.search);
+    const srcThanks = urlParams.get('thanks') || 'public/thanks.json';
+    const res = await fetch(noCacheUrl(srcThanks + '?v=' + Date.now()));
+    if (!res.ok) throw new Error('Errore caricamento thanks.json');
+    const json = await res.json();
+    THANKS_DATA = Array.isArray(json.items) ? json.items : [];
+  } catch (e) {
+    console.error(e);
+    THANKS_DATA = [];
+  }
+}
+
+function getIndexStats() {
+  return (INDEX_DATA && INDEX_DATA.stats) ? INDEX_DATA.stats : {};
+}
+
+function getIndexPaesiList() {
+  return Array.isArray(INDEX_DATA?.paesi) ? INDEX_DATA.paesi : [];
+}
+
+async function caricaTuttiIPaesiInCache() {
+  const paesi = getIndexPaesiList();
+  for (const meta of paesi) {
+    if (!meta || !meta.paese || !meta.path) continue;
+    if (PAESI_CACHE[meta.paese]) continue;
+    const res = await fetch(noCacheUrl(meta.path + '?v=' + Date.now()));
+    if (!res.ok) throw new Error('Errore caricamento file paese: ' + meta.path);
+    PAESI_CACHE[meta.paese] = await res.json();
+  }
+}
+
+async function caricaPaeseSeServe(paese) {
+  if (!paese) {
+    DATA = unisciDatasetGlobale();
+    return;
+  }
+
+  const meta = getIndexPaesiList().find(x => x.paese === paese);
+  if (!meta || !meta.path) {
+    console.warn('Paese non trovato in index:', paese);
+    DATA = unisciDatasetGlobale();
+    return;
+  }
+
+  if (!PAESI_CACHE[paese]) {
+    const res = await fetch(noCacheUrl(meta.path + '?v=' + Date.now()));
+    if (!res.ok) throw new Error('Errore caricamento file paese: ' + meta.path);
+    PAESI_CACHE[paese] = await res.json();
+  }
+
+  DATA = unisciDatasetPaese(PAESI_CACHE[paese]);
+}
+
+function unisciDatasetGlobale() {
+  const paesiCaricati = Object.values(PAESI_CACHE || {});
+  let tappe = [];
+  let turismo = [];
+  let diario = [];
+  let rifornimenti = [];
+  let carburazioni = [];
+  let manutenzioni = [];
+
+  for (const p of paesiCaricati) {
+    if (!p) continue;
+    if (Array.isArray(p.tappe)) tappe.push(...p.tappe);
+    if (Array.isArray(p.turismo)) turismo.push(...p.turismo);
+    if (Array.isArray(p.diario)) diario.push(...p.diario);
+    if (Array.isArray(p.rifornimenti)) rifornimenti.push(...p.rifornimenti);
+    if (Array.isArray(p.carburazioni)) carburazioni.push(...p.carburazioni);
+    if (Array.isArray(p.manutenzioni)) manutenzioni.push(...p.manutenzioni);
+  }
+
+  if (tappe.length === 0 && Array.isArray(INDEX_DATA?.ultimeTappe)) {
+    tappe = INDEX_DATA.ultimeTappe.filter(x => (x.tipo || 'Tappa') !== 'Turismo');
+    turismo = INDEX_DATA.ultimeTappe.filter(x => (x.tipo || '') === 'Turismo');
+  }
+
+  if (diario.length === 0 && Array.isArray(INDEX_DATA?.ultimiPost)) {
+    diario = INDEX_DATA.ultimiPost;
+  }
+
+  tappe.sort((a,b) => Number(b.id || 0) - Number(a.id || 0));
+  turismo.sort((a,b) => Number(b.id || 0) - Number(a.id || 0));
+  diario.sort((a,b) => Number((b.ts || b.id || 0)) - Number((a.ts || a.id || 0)));
+  rifornimenti.sort((a,b) => Number(b.id || 0) - Number(a.id || 0));
+  carburazioni.sort((a,b) => Number(b.id || 0) - Number(a.id || 0));
+  manutenzioni.sort((a,b) => Number(b.id || 0) - Number(a.id || 0));
+
+  return {
+    titolo: INDEX_DATA?.titolo || 'VespaTrek PX150',
+    paeseAttuale: INDEX_DATA?.paeseAttuale || '',
+    stats: INDEX_DATA?.stats || {},
+    datiPaesi: buildDatiPaesiMapFromIndex(),
+    tappe,
+    turismo,
+    diario,
+    manutenzioni: manutenzioni.length ? manutenzioni : (OFFICINA_DATA?.manutenzioni || []),
+    rifornimenti,
+    carburazioni: carburazioni.length ? carburazioni : (OFFICINA_DATA?.carburazioni || [])
+  };
+}
+
+function unisciDatasetPaese(paeseData) {
+  const paeseNome = paeseData?.paese || '';
+  const manut = Array.isArray(paeseData?.manutenzioni) ? paeseData.manutenzioni : [];
+  const carb = Array.isArray(paeseData?.carburazioni) ? paeseData.carburazioni : [];
+  const rif  = Array.isArray(paeseData?.rifornimenti) ? paeseData.rifornimenti : [];
+
+  return {
+    titolo: INDEX_DATA?.titolo || 'VespaTrek PX150',
+    paeseAttuale: paeseNome,
+    stats: INDEX_DATA?.stats || {},
+    datiPaesi: buildDatiPaesiMapFromIndex(),
+    tappe: Array.isArray(paeseData?.tappe) ? paeseData.tappe : [],
+    turismo: Array.isArray(paeseData?.turismo) ? paeseData.turismo : [],
+    diario: Array.isArray(paeseData?.diario) ? paeseData.diario : [],
+    manutenzioni: manut,
+    rifornimenti: rif,
+    carburazioni: carb
+  };
+}
+
+function buildDatiPaesiMapFromIndex() {
+  const out = {};
+  const arr = getIndexPaesiList();
+  for (const p of arr) {
+    if (!p || !p.paese) continue;
+    out[p.paese] = { ...(p.stats || {}) };
+  }
+  return out;
+}
+
+function updateStatsMini() {
+  const s = getIndexStats();
+  const km = Number(s.kmTotali || 0).toFixed(1);
+  const l  = Number(s.benzinaUsataLitri || 0).toFixed(1);
+  document.getElementById('pillKmValue').innerText = `${km} km`;
+  document.getElementById('pillFuelValue').innerText = `${l} L`;
+}
+
+function initMap() {
+  map = L.map('mapPub', { zoomControl: false }).setView([4.7, -74.1], 5);
+  canvasRenderer = L.canvas({ padding: 0.5 });
+
+  L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', { maxZoom: 19 }).addTo(map);
+  L.control.zoom({ position: 'bottomright' }).addTo(map);
+
+  layerTracce = L.layerGroup().addTo(map);
+  layerMarkers = L.layerGroup().addTo(map);
+}
+
+function driveToDirectImageUrl(url) {
+  const s = String(url || '').trim();
+  if (!s) return '';
+  if (s.startsWith('data:image/')) return s;
+  if (s.includes('googleusercontent.com')) return s;
+  if (s.includes('drive.google.com/thumbnail')) return s;
+
+  let m = s.match(/drive\.google\.com\/file\/d\/([a-zA-Z0-9_-]+)/);
+  if (!m) m = s.match(/[?&]id=([a-zA-Z0-9_-]+)/);
+  if (!m) return s;
+
+  const id = m[1];
+  return `https://drive.google.com/thumbnail?id=${id}&sz=w1200`;
+}
+
+function getYouTubeId(url) {
+  const s = String(url || '').trim();
+  if (!s) return null;
+
+  try {
+    const u = new URL(s);
+    if (u.hostname.includes('youtu.be')) {
+      const id = u.pathname.replace('/', '').trim();
+      return id.length === 11 ? id : null;
+    }
+
+    const v = u.searchParams.get('v');
+    if (v && v.length === 11) return v;
+
+    let m = u.pathname.match(/\/shorts\/([a-zA-Z0-9_-]{11})/);
+    if (m) return m[1];
+
+    m = u.pathname.match(/\/embed\/([a-zA-Z0-9_-]{11})/);
+    if (m) return m[1];
+
+    return null;
+  } catch {
+    const m = s.match(/(?:v=|youtu\.be\/|\/shorts\/|\/embed\/)([a-zA-Z0-9_-]{11})/);
+    return m ? m[1] : null;
+  }
+}
+
+function resetMarkerOffsetCache() {
+  MARKER_POSITION_COUNT = {};
+}
+
+function getOffsetLatLon(lat, lon) {
+  const key = `${Number(lat).toFixed(5)},${Number(lon).toFixed(5)}`;
+  const count = MARKER_POSITION_COUNT[key] || 0;
+  MARKER_POSITION_COUNT[key] = count + 1;
+
+  if (count === 0) return [lat, lon];
+
+  const angle = count * 0.9;
+  const radius = 0.00012 * (1 + Math.floor(count / 6));
+  const latOffset = Math.sin(angle) * radius;
+  const lonOffset = Math.cos(angle) * radius;
+  return [lat + latOffset, lon + lonOffset];
+}
+
+const iconFoto = L.divIcon({ className: 'custom-marker marker-foto', html: '📷' });
+const iconVideo = L.divIcon({ className: 'custom-marker marker-video', html: '▶️' });
+const iconMaint = L.divIcon({ className: 'custom-marker marker-maint', html: '🔧' });
+const iconFuel = L.divIcon({ className: 'custom-marker marker-fuel', html: '⛽' });
+const iconCarb = L.divIcon({ className: 'custom-marker marker-carb', html: '🌬️' });
+const iconNote = L.divIcon({ className: 'custom-marker marker-note', html: '📝' });
+
+function buildTrackPopup(t) {
+  const h = Math.floor((t.durata || 0) / 3600);
+  const m = Math.floor(((t.durata || 0) % 3600) / 60);
+  const tipo = t.tipo || 'Tappa';
+  const isGiro = (tipo === 'Turismo');
+
+  const benzStim = Number(t.benzinaStimataLitri ?? t.benzina ?? 0);
+  const benzReal = Number(t.benzinaRealeLitri ?? 0);
+  const consStim = (benzStim > 0) ? (t.km / benzStim).toFixed(2) : '--';
+  const consReal = (benzReal > 0) ? (t.km / benzReal).toFixed(2) : '--';
+  const hasGraph = Array.isArray(t.telemetry) && t.telemetry.length >= 3;
+
+  const titoloTop = (t.titolo && String(t.titolo).trim())
+    ? `📍 ${t.titolo}`
+    : `${isGiro ? '🛵 ' + T('giri') : '🏁 ' + T('tappa')}`;
+
+  return `
+    <div class="popup-title">${titoloTop}</div>
+    <div class="popup-meta">
+      🌎 <b>${t.paese || ''}</b> · 📅 ${t.data || ''} ${t.ora || ''}<br>
+      📏 <b>${Number(t.km || 0).toFixed(1)} km</b> · ${T('time')}: ${h}h ${m}m
+    </div>
+
+    ${t.note ? `<div class="popup-text">${t.note}</div>` : ''}
+
+    <div class="popup-meta" style="margin-top:10px;">
+      ${T('speedMax')}: <b>${t.velMax || 0}</b> km/h
+      ${t.velMedia ? ` · ${T('speedAvg')}: <b>${t.velMedia}</b>` : ''}<br>
+      ${T('fuelEst')}: <b>${benzStim.toFixed(2)} L</b> (${consStim} km/L)
+      ${benzReal > 0 ? `<br>${T('fuelReal')}: <b>${benzReal.toFixed(2)} L</b> (${consReal} km/L)` : ''}
+    </div>
+
+    <button
+      class="popup-cta primary"
+      onclick="window.apriGraficoPercorsoPublic(${t.id})"
+      ${hasGraph ? '' : 'disabled'}
+    >
+      ${T('graph')}
+    </button>
+  `;
+}
+
+function buildDiaryPopup(d, mediaHtml) {
+  return `
+    <div class="popup-title">📍 ${d.paese || ''}</div>
+    <div class="popup-meta">📅 ${d.data || ''} ${d.ora || ''}${d.km ? ` · 📏 km ${d.km}` : ''}</div>
+    <div class="popup-text">${d.testo || ''}</div>
+    ${mediaHtml}
+  `;
+}
+
+function buildMaintPopup(m) {
+  return `
+    <div class="popup-title">${T('workshop')}: ${m.nome || ''}</div>
+    <div class="popup-meta">📅 ${m.data || ''}${m.km ? ` · 📏 km ${m.km}` : ''}</div>
+    <div class="popup-text">${m.desc || ''}</div>
+    ${Number(m.costoUsd || 0) > 0 ? `<div class="popup-meta" style="margin-top:8px;color:#9be28d;">💰 ${T('cost')}: <b>
+$$
+{Number(m.costoUsd).toFixed(2)}</b></div>` : ''}
+  `;
+}
+///
+function buildFuelPopup(r) {
+  const costoRif = Number(r?.costoBenzUsd || r?.costo || 0);
+  const qta = Number(r?.qta || r?.litri || 0);
+
+  return `
+    <div class="popup-title" style="color:var(--fuel)">${T('refuel')}</div>
+    <div class="popup-meta">📅 ${r?.data || ''} | 📏 km ${r?.km || ''}</div>
+    <div>📦 <b>${qta.toFixed(2)} L</b> (${T('destination')}: ${r?.dest || r?.note || ''})</div>
+    ${costoRif > 0 ? `<div style="margin-top:5px; color:#4caf50;">💰 ${T('paid')}: $ <b>${costoRif.toFixed(2)}</b></div>` : ''}  `;
+}
+
+function buildCarbPopup(c) {
+  return `
+    <div class="popup-title">${T('carbSetup')}</div>
+    <div class="popup-meta">📅 ${c.data || ''} · ⛰️ ${T('altitude')}: ${c.alt || 0}m</div>
+    <div class="popup-text">Max: <b>${c.chicMax || ''}</b> · Min: <b>${c.chicMin || ''}</b></div>
+    ${c.nota ? `<div class="popup-meta" style="margin-top:8px;font-style:italic;">"${c.nota}"</div>` : ''}
+  `;
+}
+
+function renderMap() {
+  if (!layerTracce || !layerMarkers) return;
+
+  layerTracce.clearLayers();
+  layerMarkers.clearLayers();
+  if (!DATA) return;
+
+  resetMarkerOffsetCache();
+
+  let bounds = L.latLngBounds();
+  let drawnLines = 0;
+
+  const tappe = Array.isArray(DATA.tappe) ? DATA.tappe : [];
+  const turismo = Array.isArray(DATA.turismo) ? DATA.turismo : [];
+
+  let tracceDaMostrare = [];
+  if (currentMode === 'TUTTO' || currentMode === 'TAPPE') tracceDaMostrare.push(...tappe);
+  if (currentMode === 'TUTTO' || currentMode === 'GIRI') tracceDaMostrare.push(...turismo);
+
+  tracceDaMostrare.forEach(t => {
+    if (currentCountry && t.paese !== currentCountry) return;
+    if (currentMonthFilter && getYearMonthFromPercorso(t) !== currentMonthFilter) return;
+    if (!t.traccia || t.traccia.length < 2) return;
+
+    const latlngs = t.traccia.map(p =>
+      Array.isArray(p) ? [p[0], p[1]] : [p.lat, p.lon || p.lng]
+    );
+
+    const color = t.tipo === 'Turismo' ? '#4da3ff' : '#d94d4d';
+
+    const poly = L.polyline(latlngs, {
+      color,
+      weight: 5,
+      opacity: 0.85,
+      interactive: true,
+      renderer: canvasRenderer
+    }).addTo(layerTracce);
+
+    bounds.extend(poly.getBounds());
+    drawnLines++;
+
+    const popupHtml = buildTrackPopup(t);
+    poly.bindPopup(popupHtml);
+
+    const lastPoint = latlngs[latlngs.length - 1];
+    const markerFine = L.marker(lastPoint, {
+      icon: L.divIcon({
+        className: 'custom-marker',
+        html: t.tipo === 'Turismo' ? '🛵' : '🏁',
+        iconSize: [30, 30]
+      })
+    }).addTo(layerTracce);
+
+    markerFine.bindPopup(popupHtml);
+  });
+
+const noMarkerVisible =
+  !currentMarkerFilters.FOTO &&
+  !currentMarkerFilters.VIDEO &&
+  !currentMarkerFilters.MAINT &&
+  !currentMarkerFilters.FUEL &&
+  !currentMarkerFilters.CARB;
+
+if (noMarkerVisible) {
+  if (drawnLines > 0) {
+    map.fitBounds(bounds.pad(0.1));
+  }
+  return;
+}
+
+  function creaMarker(lat, lon, icona, popupHTML) {
+    if (!isFinite(lat) || !isFinite(lon)) return;
+    const [adjLat, adjLon] = getOffsetLatLon(lat, lon);
+    const m = L.marker([adjLat, adjLon], { icon: icona }).addTo(layerMarkers);
+    bounds.extend(m.getLatLng());
+    m.bindPopup(popupHTML, { minWidth: 250 });
+  }
+
+
+const diario = Array.isArray(DATA.diario) ? DATA.diario : [];
+
+function drawDiaryMarker(d, onlyVideos = false) {
+  if (currentCountry && d.paese !== currentCountry) return;
+  if (currentMonthFilter && getYearMonthFromPublicEntry(d) !== currentMonthFilter) return;
+  if (!d.geo) return;
+
+  const lat = Number(d.geo.lat);
+  const lon = Number(d.geo.lon ?? d.geo.lng);
+  if (!isFinite(lat) || !isFinite(lon)) return;
+
+  const ytId = getYouTubeId(d.videoUrl);
+  const hasVideoUrl = !!ytId;
+  const hasVideoPlanned = !!d.videoPlanned;
+  const hasVideo = hasVideoUrl || hasVideoPlanned;
+
+  const rawFoto = d.fotoUrl || d.foto;
+  const fotoSrc = driveToDirectImageUrl(rawFoto);
+  const hasPhoto = !!fotoSrc;
+
+  if (onlyVideos && !hasVideo) return;
+  if (!onlyVideos && hasVideo) return;
+
+  const showVideo = hasVideo && isMarkerTypeVisible('VIDEO');
+  const showPhoto = hasPhoto && isMarkerTypeVisible('FOTO');
+  const showNote = !hasVideo && !hasPhoto && (isMarkerTypeVisible('FOTO') || isMarkerTypeVisible('VIDEO'));
+
+  if (!showVideo && !showPhoto && !showNote) return;
+
+  let mediaHtml = '';
+
+  if (hasPhoto) {
+    const safe = String(fotoSrc)
+      .replace(/'/g, "\\'")
+      .replace(/"/g, '&quot;');
+
+    mediaHtml += `
+      <div style="margin-top:8px;">
+        <img class="popup-img" src="${fotoSrc}" onclick="openLightbox('${safe}')">
+      </div>
+    `;
+  }
+
+  if (hasVideoUrl) {
+    mediaHtml += `
+      <div class="popup-video" style="margin-top:10px;">
+        <iframe src="https://www.youtube.com/embed/${ytId}" allowfullscreen></iframe>
+      </div>
+    `;
+  } else if (hasVideoPlanned) {
+    mediaHtml += `
+      <div style="margin-top:10px; color:#ffb74d; font-weight:900;">
+        ${T('videoComing')}
+      </div>
+    `;
+  }
+
+  const icon = showVideo ? iconVideo : (showPhoto ? iconFoto : iconNote);
+  creaMarker(lat, lon, icon, buildDiaryPopup(d, mediaHtml));
+}
+
+// prima foto/note
+diario.forEach(d => drawDiaryMarker(d, false));
+
+// poi video per ultimi
+diario.forEach(d => drawDiaryMarker(d, true));
+
+  const manutenzioni = Array.isArray(DATA.manutenzioni) ? DATA.manutenzioni : [];
+  manutenzioni.forEach(m => {
+    if (currentCountry && m.paese !== currentCountry) return;
+    if (currentMonthFilter && getYearMonthFromPublicEntry(m) !== currentMonthFilter) return;
+    if (!m.geo) return;
+    if (!isMarkerTypeVisible('MAINT')) return;
+
+    const lat = Number(m.geo.lat);
+    const lon = Number(m.geo.lon ?? m.geo.lng);
+    if (!isFinite(lat) || !isFinite(lon)) return;
+
+    creaMarker(lat, lon, iconMaint, buildMaintPopup(m));
+  });
+
+  const rifornimenti = Array.isArray(DATA.rifornimenti) ? DATA.rifornimenti : [];
+  rifornimenti.forEach(r => {
+    if (currentCountry && r.paese !== currentCountry) return;
+    if (currentMonthFilter && getYearMonthFromPublicEntry(r) !== currentMonthFilter) return;
+    if (!isMarkerTypeVisible('FUEL')) return;
+
+    const lat = Number(
+      r?.geo?.lat ??
+      r?.lat ??
+      r?.latitude
+    );
+
+    const lon = Number(
+      r?.geo?.lon ??
+      r?.geo?.lng ??
+      r?.lon ??
+      r?.lng ??
+      r?.longitude
+    );
+
+    if (!isFinite(lat) || !isFinite(lon)) return;
+
+    creaMarker(lat, lon, iconFuel, buildFuelPopup(r));
+  });
+
+  const carburazioni = Array.isArray(DATA.carburazioni) ? DATA.carburazioni : [];
+  carburazioni.forEach(c => {
+    if (currentCountry && c.paese !== currentCountry) return;
+    if (currentMonthFilter && getYearMonthFromPublicEntry(c) !== currentMonthFilter) return;
+    if (!c.geo) return;
+    if (!isMarkerTypeVisible('CARB')) return;
+
+    const lat = Number(c.geo.lat);
+    const lon = Number(c.geo.lon ?? c.geo.lng);
+    if (!isFinite(lat) || !isFinite(lon)) return;
+
+    creaMarker(lat, lon, iconCarb, buildCarbPopup(c));
+  });
+
+  if ((drawnLines > 0 || layerMarkers.getLayers().length > 0) && bounds.isValid()) {
+    map.fitBounds(bounds.pad(0.1));
+  }
+}
+
+function syncFilterButtonsUI() {
+  const map = {
+    FOTO: 'markerBtnFoto',
+    VIDEO: 'markerBtnVideo',
+    MAINT: 'markerBtnMaint',
+    FUEL: 'markerBtnFuel',
+    CARB: 'markerBtnCarb'
+  };
+
+  Object.entries(map).forEach(([type, id]) => {
+    const btn = document.getElementById(id);
+    if (!btn) return;
+
+    btn.classList.toggle('active', !!currentMarkerFilters[type]);
+  });
+
+  const allBtn = document.getElementById('markerBtnAll');
+  const noneBtn = document.getElementById('markerBtnNone');
+
+  const values = Object.values(currentMarkerFilters);
+  const allOn = values.every(Boolean);
+  const allOff = values.every(v => !v);
+
+  if (allBtn) allBtn.classList.toggle('active', allOn);
+  if (noneBtn) noneBtn.classList.toggle('active', allOff);
+}
+
+function setMode(mode, onlyUI = false) {
+  currentMode = mode;
+  syncFilterButtonsUI();
+  if (!onlyUI) renderMap();
+}
+
+async function setCountry(country, onlyUI = false) {
+  currentCountry = country;
+
+  try {
+    await caricaPaeseSeServe(currentCountry);
+    popolaMesi();
+    syncFilterButtonsUI();
+    if (!onlyUI) renderMap();
+  } catch (e) {
+    console.error(e);
+    alert('Errore caricamento paese');
+  }
+}
+
+function setMonthFilter(month, onlyUI = false) {
+  currentMonthFilter = month || '';
+  syncFilterButtonsUI();
+  if (!onlyUI) renderMap();
+}
+
+function setMarkerFilter(filterType, onlyUI = false) {
+  if (filterType === 'ALL') {
+    currentMarkerFilters = {
+      FOTO: true,
+      VIDEO: true,
+      MAINT: true,
+      FUEL: true,
+      CARB: true
+    };
+  } else if (filterType === 'NONE') {
+    currentMarkerFilters = {
+      FOTO: false,
+      VIDEO: false,
+      MAINT: false,
+      FUEL: false,
+      CARB: false
+    };
+  } else {
+    currentMarkerFilters[filterType] = !currentMarkerFilters[filterType];
+  }
+
+  syncFilterButtonsUI();
+  if (!onlyUI) renderMap();
+}
+
+
+function isMarkerTypeVisible(type) {
+  return !!currentMarkerFilters[type];
+}
+
+
+  
+function applyFiltersAndClose() {
+  renderMap();
+  closeFiltersDrawer();
+}
+
+function resetFilters() {
+  currentMode = 'TUTTO';
+  currentCountry = '';
+  currentMarkerFilter = 'ALL';
+  currentMonthFilter = '';
+
+  DATA = unisciDatasetGlobale();
+  popolaMesi();
+  syncFilterButtonsUI();
+  renderMap();
+  closeFiltersDrawer();
+}
+
+function openFiltersDrawer() {
+  document.getElementById('filtersDrawer').classList.add('open');
+  document.getElementById('filtersBackdrop').classList.add('open');
+  document.getElementById('filtersDrawer').setAttribute('aria-hidden', 'false');
+}
+
+function closeFiltersDrawer() {
+  document.getElementById('filtersDrawer').classList.remove('open');
+  document.getElementById('filtersBackdrop').classList.remove('open');
+  document.getElementById('filtersDrawer').setAttribute('aria-hidden', 'true');
+
+  setTimeout(() => {
+    if (map) map.invalidateSize();
+  }, 260);
+}
+
+function popolaMesi() {
+  const sel = document.getElementById('monthSelect');
+  if (!sel || !DATA) return;
+
+  sel.innerHTML = `<option value="">${T('allMonths')}</option>`;
+
+  const mesiSet = new Set();
+
+  const tappe = Array.isArray(DATA?.tappe) ? DATA.tappe : [];
+  const turismo = Array.isArray(DATA?.turismo) ? DATA.turismo : [];
+  const diario = Array.isArray(DATA?.diario) ? DATA.diario : [];
+  const manutenzioni = Array.isArray(DATA?.manutenzioni) ? DATA.manutenzioni : [];
+  const rifornimenti = Array.isArray(DATA?.rifornimenti) ? DATA.rifornimenti : [];
+  const carburazioni = Array.isArray(DATA?.carburazioni) ? DATA.carburazioni : [];
+
+  tappe.forEach(t => {
+    const mese = getYearMonthFromPercorso(t);
+    if (mese) mesiSet.add(mese);
+  });
+
+  turismo.forEach(t => {
+    const mese = getYearMonthFromPercorso(t);
+    if (mese) mesiSet.add(mese);
+  });
+
+  diario.forEach(d => {
+    const mese = getYearMonthFromPublicEntry(d);
+    if (mese) mesiSet.add(mese);
+  });
+
+  manutenzioni.forEach(m => {
+    const mese = getYearMonthFromPublicEntry(m);
+    if (mese) mesiSet.add(mese);
+  });
+
+  rifornimenti.forEach(r => {
+    const mese = getYearMonthFromPublicEntry(r);
+    if (mese) mesiSet.add(mese);
+  });
+
+  carburazioni.forEach(c => {
+    const mese = getYearMonthFromPublicEntry(c);
+    if (mese) mesiSet.add(mese);
+  });
+
+  const mesi = Array.from(mesiSet).sort();
+
+  mesi.forEach(mese => {
+    const opt = document.createElement('option');
+    opt.value = mese;
+    opt.innerText = '🗓️ ' + mese;
+    sel.appendChild(opt);
+  });
+
+  if (mesi.length > 0) {
+    const ultimoMese = mesi[mesi.length - 1];
+    if (!currentMonthFilter || !mesi.includes(currentMonthFilter)) {
+      currentMonthFilter = ultimoMese;
+    }
+  } else {
+    currentMonthFilter = '';
+  }
+
+  sel.value = currentMonthFilter || '';
+}
+
+function popolaPaesi() {
+  const selectMap = document.getElementById('selectCountry');
+  const selectStats = document.getElementById('statsCountryFilter');
+  if (!INDEX_DATA) return;
+
+  while (selectMap.options.length > 1) selectMap.remove(1);
+  while (selectStats.options.length > 1) selectStats.remove(1);
+
+  const paesi = getIndexPaesiList();
+
+  paesi.forEach(p => {
+    const nome = p.paese || '';
+    if (!nome) return;
+
+    const optMap = document.createElement('option');
+    optMap.value = nome;
+    optMap.innerText = '📍 ' + nome;
+    selectMap.appendChild(optMap);
+
+    const optStats = document.createElement('option');
+    optStats.value = nome;
+    optStats.innerText = '📍 ' + nome;
+    selectStats.appendChild(optStats);
+  });
+}
+
+function apriStats() {
+  const modal = document.getElementById('statsModal');
+  modal.classList.add('open');
+  document.getElementById('statsCountryFilter').value = 'GLOBAL';
+  renderStatsDati();
+}
+
+function closeStatsModal() {
+  document.getElementById('statsModal').classList.remove('open');
+}
+
+function renderStatsDati() {
+  if (!INDEX_DATA) return;
+
+  const mode = document.getElementById('statsCountryFilter').value;
+  let km = 0, benz = 0, spesaBenz = 0, spesaMaint = 0, olio = 0;
+  const country = (mode === 'GLOBAL') ? null : mode;
+
+  if (country === null) {
+    const s = INDEX_DATA.stats || {};
+    km = Number(s.kmTotali || 0);
+    benz = Number(s.benzinaUsataLitri || 0);
+    olio = Number(s.olioTotaleLitri || 0);
+    spesaBenz = Number(s.spesaBenzinaUsd || 0);
+    spesaMaint = Number(s.spesaRicambiUsd || 0) + Number(s.spesaManodoperaUsd || 0);
+  } else {
+    const meta = getIndexPaesiList().find(x => x.paese === country);
+    const st = meta?.stats || {};
+
+    km = Number(st.km || 0);
+    benz = Number(st.benzina || 0);
+
+    if (st.olioTotaleLitri != null) {
+      olio = Number(st.olioTotaleLitri || 0);
+    } else if (st.olioMl != null) {
+      olio = Number(st.olioMl || 0) / 1000;
+    } else {
+      olio = 0;
+    }
+
+    spesaBenz = Number(st.spesaBenzinaUsd || 0);
+    spesaMaint = Number(st.spesaRicambiUsd || 0) + Number(st.spesaManodoperaUsd || 0);
+  }
+
+  const cons = benz > 0 ? (km / benz).toFixed(1) : '--';
+
+  const spesaOlio = (country === null)
+    ? Number((INDEX_DATA.stats || {}).spesaOlioUsd || 0)
+    : Number((getIndexPaesiList().find(x => x.paese === country)?.stats?.spesaOlioUsd || 0));
+
+  const fmtUsd = (x) => '$' + Number(x || 0).toFixed(2);
+
+  const olioBoxValue = (country === null)
+    ? `${Number(olio || 0).toFixed(2)} L`
+    : (olio > 0 ? `${Number(olio || 0).toFixed(2)} L` : '--');
+
+  document.getElementById('statsModalContent').innerHTML = `
+    <div class="stats-card">
+      <div class="stats-k">${T('statsKmTotal')}</div>
+      <div class="stats-v">${Number(km || 0).toFixed(1)}</div>
+    </div>
+
+    <div class="stats-card">
+      <div class="stats-k">${T('statsFuelUsed')}</div>
+      <div class="stats-v">${Number(benz || 0).toFixed(1)} L</div>
+    </div>
+
+    <div class="stats-card">
+      <div class="stats-k">${T('statsAvgConsumption')}</div>
+      <div class="stats-v">${cons} km/L</div>
+    </div>
+
+    <div class="stats-card">
+      <div class="stats-k">${T('statsFuelCost')}</div>
+      <div class="stats-v">${fmtUsd(spesaBenz)}</div>
+    </div>
+
+    <div class="stats-card">
+      <div class="stats-k">${T('statsOilCost')}</div>
+      <div class="stats-v">${fmtUsd(spesaOlio)}</div>
+    </div>
+
+    <div class="stats-card">
+      <div class="stats-k">${T('statsWorkshopCost')}</div>
+      <div class="stats-v">${fmtUsd(spesaMaint)}</div>
+    </div>
+
+    <div class="stats-card wide">
+      <div class="stats-k">${T('statsOilUsed')}</div>
+      <div class="stats-v">${olioBoxValue}</div>
+    </div>
+  `;
+}
+
+function updateHostModalTexts() {
+  document.getElementById('hostModalTitle').innerText = T('hostTitle');
+  document.getElementById('hostText1').innerText = T('hostText1');
+  document.getElementById('hostText3').innerText = T('hostText3');
+
+  document.getElementById('supportCard1Title').innerText = T('supportCard1Title');
+  document.getElementById('supportCard1Text').innerText = T('supportCard1Text');
+  document.getElementById('hostOpenFormBtn').innerText = T('hostOpenForm');
+
+  document.getElementById('vespaClubTitle').innerText = T('vespaClubTitle');
+  document.getElementById('vespaClubText').innerText = T('vespaClubText');
+  document.getElementById('vespaClubBtn').innerText = T('vespaClubBtn');
+
+  document.getElementById('thanksModalTitle').innerText = T('thanksTitle');
+  document.getElementById('thanksModalIntro').innerText = T('thanksIntro');
+}
+
+function openHostForm() {
+  updateHostModalTexts();
+  document.getElementById('hostModal').classList.add('open');
+}
+
+function closeHostForm() {
+  document.getElementById('hostModal').classList.remove('open');
+}
+
+function openThanksModal() {
+  renderThanksModalList();
+  document.getElementById('thanksModal').classList.add('open');
+}
+
+function closeThanksModal() {
+  document.getElementById('thanksModal').classList.remove('open');
+}
+
+function goToHostExternalForm() {
+  if (!HOST_FORM_URL) {
+    alert(T('hostFormUnavailable'));
+    return;
+  }
+  window.open(HOST_FORM_URL, '_blank', 'noopener');
+}
+
+function goToVespaClubForm() {
+  if (!VESPA_CLUB_FORM_URL) {
+    alert(T('vespaClubFormUnavailable'));
+    return;
+  }
+  window.open(VESPA_CLUB_FORM_URL, '_blank', 'noopener');
+}
+
+function renderThanksModalList() {
+  const listEl = document.getElementById('thanksModalList');
+  if (!listEl) return;
+
+  if (!Array.isArray(THANKS_DATA) || THANKS_DATA.length === 0) {
+    listEl.innerHTML = `<div style="color:#888; font-size:13px;">${T('thanksEmpty')}</div>`;
+    return;
+  }
+
+  listEl.innerHTML = THANKS_DATA.map(item => {
+    const note =
+      LANG === 'en' ? (item.note_en || item.note_it || '') :
+      LANG === 'es' ? (item.note_es || item.note_it || '') :
+      (item.note_it || '');
+
+    const place = [item.city || '', item.country || ''].filter(Boolean).join(', ');
+    const photo = driveToDirectImageUrl(item.photo || item.photoUrl || '');
+
+    return `
+      <div class="thanks-card">
+        ${photo ? `<img class="thanks-photo" src="${photo}" alt="${item.name || ''}">` : ''}
+        <div>
+          <div class="thanks-name">${item.name || ''}</div>
+          ${place ? `<div class="thanks-place">${place}</div>` : ''}
+        </div>
+        <div class="thanks-note">${note}</div>
+      </div>
+    `;
+  }).join('');
+}
+
+function openLightbox(src) {
+  const fixed = driveToDirectImageUrl(src);
+  document.getElementById('lightboxImg').src = fixed;
+  document.getElementById('lightbox').classList.add('open');
+}
+
+function closeLightbox() {
+  document.getElementById('lightbox').classList.remove('open');
+  document.getElementById('lightboxImg').src = '';
+}
+
+function closeGraphModal() {
+  document.getElementById('graphModal').classList.remove('open');
+}
+
+function drawSeriesPub(canvasId, points, color, valueKey) {
+  const cv = document.getElementById(canvasId);
+  if (!cv) return;
+
+  const rect = cv.getBoundingClientRect();
+  const W = Math.max(320, Math.floor(rect.width));
+  const H = Math.max(150, Math.floor(rect.height));
+  cv.width = W;
+  cv.height = H;
+
+  const ctx = cv.getContext('2d');
+  ctx.clearRect(0,0,W,H);
+
+  if (!Array.isArray(points) || points.length < 2) {
+    ctx.fillStyle = '#888';
+    ctx.font = '14px system-ui';
+    ctx.fillText('Dati insufficienti', 12, 28);
+    return;
+  }
+
+  const xs = points.map(p => Number(p.km || 0));
+  const ys = points.map(p => Number(p[valueKey] || 0));
+
+  const xMin = Math.min(...xs), xMax = Math.max(...xs);
+  let yMin = Math.min(...ys), yMax = Math.max(...ys);
+
+  if (!isFinite(xMin) || !isFinite(xMax) || xMax <= xMin) return;
+  if (!isFinite(yMin) || !isFinite(yMax)) return;
+  if (yMax === yMin) yMax = yMin + 1;
+
+  const padL = 36, padR = 10, padT = 10, padB = 22;
+  const plotW = W - padL - padR;
+  const plotH = H - padT - padB;
+
+  ctx.strokeStyle = '#222';
+  ctx.lineWidth = 1;
+  for (let i=0;i<=4;i++){
+    const y = padT + (plotH*i/4);
+    ctx.beginPath();
+    ctx.moveTo(padL,y);
+    ctx.lineTo(W-padR,y);
+    ctx.stroke();
+  }
+
+  function X(x){ return padL + ((x - xMin) / (xMax - xMin)) * plotW; }
+  function Y(y){ return padT + (1 - ((y - yMin) / (yMax - yMin))) * plotH; }
+
+  ctx.strokeStyle = color;
+  ctx.lineWidth = 2;
+  ctx.beginPath();
+  ctx.moveTo(X(xs[0]), Y(ys[0]));
+  for (let i=1;i<points.length;i++) ctx.lineTo(X(xs[i]), Y(ys[i]));
+  ctx.stroke();
+
+  ctx.fillStyle = '#aaa';
+  ctx.font = '12px system-ui';
+  ctx.fillText(String(Math.round(yMax)), 6, padT+12);
+  ctx.fillText(String(Math.round(yMin)), 6, padT+plotH);
+  ctx.fillStyle = '#666';
+  ctx.fillText(`${xMax.toFixed(1)} km`, W-72, H-8);
+}
+
+window.apriGraficoPercorsoPublic = function(id) {
+  if (!DATA) return;
+
+  const tappe = Array.isArray(DATA.tappe) ? DATA.tappe : [];
+  const tur = Array.isArray(DATA.turismo) ? DATA.turismo : [];
+  const all = tappe.concat(tur);
+
+  const t = all.find(x => String(x.id) === String(id));
+  if (!t) {
+    alert('Percorso non trovato');
+    return;
+  }
+
+  const telem = Array.isArray(t.telemetry) ? t.telemetry : [];
+  if (telem.length < 3) {
+    alert('Nessuna telemetria nel JSON pubblico.');
+    return;
+  }
+
+  document.getElementById('graphTitle').innerText =
+    `📈 ${t.tipo || 'Percorso'} — ${t.data || ''} ${t.ora || ''} — ${t.paese || ''}`;
+
+  const altMin = Math.min(...telem.map(p => Number(p.alt||0)));
+  const altMax = Math.max(...telem.map(p => Number(p.alt||0)));
+  const spMax  = Math.max(...telem.map(p => Number(p.sp||0)));
+
+  document.getElementById('graphInfo').innerHTML = `
+    <div>📏 Km: <b>${Number(t.km||0).toFixed(1)}</b></div>
+    <div>⛰️ Altitudine: <b>${Math.round(altMin)}</b> → <b>${Math.round(altMax)}</b> m</div>
+    <div>🏎️ Vel max (telemetria): <b>${Math.round(spMax)}</b> km/h</div>
+  `;
+
+  document.getElementById('graphModal').classList.add('open');
+
+  setTimeout(() => {
+    drawSeriesPub('cvAltPub', telem, '#2196F3', 'alt');
+    drawSeriesPub('cvSpdPub', telem, '#d32f2f', 'sp');
+  }, 120);
+};
+
+async function loadData() {
+  initMap();
+
+  try {
+    const urlParams = new URLSearchParams(window.location.search);
+    const requestedIndex = urlParams.get('src');
+    const srcOfficina = urlParams.get('officina') || 'public/officina.json';
+
+    let srcIndex = requestedIndex || 'public/vespatrek_index.json';
+
+    let resIndex = await fetch(noCacheUrl(srcIndex + '?v=' + Date.now()));
+    if (!resIndex.ok) throw new Error('Errore caricamento index');
+
+    let tempIndex = await resIndex.json();
+
+    if (!Array.isArray(tempIndex?.paesi)) {
+      console.warn('File src non valido come index, uso public/vespatrek_index.json:', srcIndex);
+      srcIndex = 'public/vespatrek_index.json';
+
+      resIndex = await fetch(noCacheUrl(srcIndex + '?v=' + Date.now()));
+      if (!resIndex.ok) throw new Error('Errore caricamento index fallback');
+
+      tempIndex = await resIndex.json();
+    }
+
+    INDEX_DATA = tempIndex;
+
+   const resOfficina = await fetch(noCacheUrl(srcOfficina + '?v=' + Date.now()));
+    if (!resOfficina.ok) throw new Error('Errore caricamento officina');
+    OFFICINA_DATA = await resOfficina.json();
+
+    await Promise.all([
+      loadHostConfig(),
+      loadThanksData()
+    ]);
+
+    await caricaTuttiIPaesiInCache();
+
+    DATA = unisciDatasetGlobale();
+
+    popolaPaesi();
+    popolaMesi();
+    applyLang();
+    updateStatsMini();
+    syncFilterButtonsUI();
+    renderMap();
+
+  } catch (e) {
+    console.error(e);
+    document.getElementById('pillKmValue').innerText = 'Errore';
+    document.getElementById('pillFuelValue').innerText = 'Errore';
+  }
+}
+
+window.onload = loadData;
+</script>
+</body>
+</html>
