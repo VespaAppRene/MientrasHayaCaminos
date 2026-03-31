@@ -1,0 +1,25 @@
+{
+  "items": [
+
+ {
+      "name": "Angelica Ruiz",
+      "country": "Colombia",
+      "city": "Girón",
+      "type": "hospitality",
+      "note_it": "Per la pasta con la zucca e il pollo con i peperoni.",
+      "note_en": "For the pumpkin pasta and the peppers chicken",
+      "note_es": "Para la pasta de calabaza y el pollo con pimientones"
+    },
+
+    
+    {
+      "name": "Carlos",
+      "country": "Perù",
+      "city": "Cusco",
+      "type": "mechanical_help",
+      "note_it": "Per l’aiuto pratico e i consigli sulla strada.",
+      "note_en": "For the practical help and road advice.",
+      "note_es": "Por la ayuda práctica y los consejos sobre la ruta."
+    }
+  ]
+}
